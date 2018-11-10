@@ -19,8 +19,8 @@ sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 dependencies {
-    compile  "org.embulk:embulk-core:0.9.10-SNAPSHOT"
-    provided "org.embulk:embulk-core:0.9.10-SNAPSHOT"
+    compile  "org.embulk:embulk-core:0.9.9"
+    provided "org.embulk:embulk-core:0.9.9"
     // compile "YOUR_JAR_DEPENDENCY_GROUP:YOUR_JAR_DEPENDENCY_MODULE:YOUR_JAR_DEPENDENCY_VERSION"
     testCompile "junit:junit:4.+"
 }
