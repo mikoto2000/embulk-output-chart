@@ -12,6 +12,8 @@ import javafx.scene.chart.ScatterChart;
 import javafx.scene.chart.StackedBarChart;
 import javafx.scene.chart.XYChart;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
 import com.google.common.base.Optional;
 
 import org.embulk.config.Config;
@@ -27,26 +29,40 @@ import org.embulk.spi.PageOutput;
 import org.embulk.spi.Schema;
 import org.embulk.spi.TransactionalPageOutput;
 
+import org.slf4j.Logger;
+
 public class ChartOutputPlugin
         implements OutputPlugin
 {
     public interface PluginTask
             extends Task
     {
-        // configuration option 1 (required integer)
-        @Config("option1")
-        public int getOption1();
+        // configuration chart type (required ChartType)
+        @Config("chart_type")
+        public ChartType getChartType();
 
-        // configuration option 2 (optional string, null is not allowed)
-        @Config("option2")
-        @ConfigDefault("\"myvalue\"")
-        public String getOption2();
+        // configuration x-axis type (required AxisType)
+        @Config("x_axis_type")
+        public AxisType getXAxisType();
 
-        // configuration option 3 (optional string, null is allowed)
-        @Config("option3")
-        @ConfigDefault("null")
-        public Optional<String> getOption3();
+        // configuration x-axis name (required String)
+        @Config("x_axis_name")
+        public String getXAxisName();
+
+        // configuration y-axis type (required AxisType)
+        @Config("y_axis_type")
+        public AxisType getYAxisType();
+
+        // configuration y-axis name (required String)
+        @Config("y_axis_name")
+        public String getYAxisName();
+
+        // configuration y-axis column name (required String)
+        @Config("serieses")
+        public SeriesesConfig getSeriesesConfig();
     }
+
+    private Logger log = Exec.getLogger(ChartOutputPlugin.class);
 
     @Override
     public ConfigDiff transaction(ConfigSource config,
@@ -83,20 +99,29 @@ public class ChartOutputPlugin
     {
         PluginTask task = taskSource.loadTask(PluginTask.class);
 
-        // Write your code here :)
+        log.info("chart type: {}.", task.getChartType());
+        log.info("x axis type: {}.", task.getXAxisType());
+        log.info("x axis name: {}.", task.getXAxisName());
+        log.info("y axis type: {}.", task.getYAxisType());
+        log.info("y axis name: {}.", task.getYAxisName());
+        log.info("serieses:");
+        for (SeriesConfig series : task.getSeriesesConfig().getSerieses()) {
+            log.info("{}.", series);
+        }
+
         throw new UnsupportedOperationException("ChartOutputPlugin.run method is not implemented yet");
     }
 
-    enum ChartType {
+    public enum ChartType {
         BAR,
         LINE,
         SCATTER,
-        STACKED_BAR
+        STACKED_BAR;
     }
 
-    enum AxisType {
+    public enum AxisType {
         NUMBER,
-        CATEGORY
+        CATEGORY;
     }
 
     private Axis getAxis(AxisType axisType) {
@@ -122,6 +147,43 @@ public class ChartOutputPlugin
                 return new StackedBarChart<X, Y>(xAxis, yAxis);
             default:
                 throw new RuntimeException("Unsupported Chart Type: " + chartType);
+        }
+    }
+
+    public static class SeriesesConfig {
+        private final List<SeriesConfig> serieses;
+
+        @JsonCreator
+        public SeriesesConfig(List<SeriesConfig> serieses) {
+            this.serieses = serieses;
+        }
+
+        @JsonValue
+        public List<SeriesConfig> getSerieses() {
+            return serieses;
+        }
+    }
+
+    public static class SeriesConfig {
+        private final String name;
+        private final String column;
+
+        @JsonCreator
+        public SeriesConfig(ConfigSource conf) {
+            this.name = conf.get(String.class, "name");
+            this.column = conf.get(String.class, "column");
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public String getColumn() {
+            return column;
+        }
+
+        public String toString() {
+            return String.format("SeriesConfig[%s, %s]", getName(), getColumn());
         }
     }
 }
