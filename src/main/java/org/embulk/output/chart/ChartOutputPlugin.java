@@ -25,9 +25,11 @@ import org.embulk.config.TaskReport;
 import org.embulk.config.TaskSource;
 import org.embulk.spi.Exec;
 import org.embulk.spi.OutputPlugin;
-import org.embulk.spi.PageOutput;
+import org.embulk.spi.Page;
+import org.embulk.spi.PageReader;
 import org.embulk.spi.Schema;
 import org.embulk.spi.TransactionalPageOutput;
+import org.embulk.spi.util.PagePrinter;
 
 import org.slf4j.Logger;
 
@@ -109,7 +111,32 @@ public class ChartOutputPlugin
             log.info("{}.", series);
         }
 
-        throw new UnsupportedOperationException("ChartOutputPlugin.run method is not implemented yet");
+        return new TransactionalPageOutput() {
+            private final PageReader reader = new PageReader(schema);
+            // TODO: timezone setting.
+            private final PagePrinter printer = new PagePrinter(schema, "UTC");
+
+            public void add(Page page) {
+                reader.setPage(page);
+                while (reader.nextRecord()) {
+                    System.out.println(printer.printRecord(reader, ","));
+                }
+            }
+
+            public void finish() {
+                System.out.flush();
+            }
+
+            public void close() {
+                reader.close();
+            }
+
+            public void abort() {}
+
+            public TaskReport commit() {
+                return Exec.newTaskReport();
+            }
+        };
     }
 
     public enum ChartType {
