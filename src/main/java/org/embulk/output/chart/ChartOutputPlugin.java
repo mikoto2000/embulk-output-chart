@@ -149,10 +149,16 @@ public class ChartOutputPlugin extends Application
                     targets.add(schema.lookupColumn(series.getY()));
                 }
                 while (reader.nextRecord()) {
-                    System.out.println(printer.printRecord(reader, ","));
                     Map<String, Object> m = new HashMap<>();
                     for (Column col : targets) {
-                        m.put(col.getName(), reader.getLong(col));
+                        String typeName = col.getType().getName();
+                        if (typeName.equals("string")) {
+                            m.put(col.getName(), reader.getString(col));
+                        } else if (typeName.equals("long")){
+                            m.put(col.getName(), reader.getLong(col));
+                        } else {
+                            m.put(col.getName(), reader.getDouble(col));
+                        }
                     }
                     test.add(m);
                 }
@@ -167,7 +173,6 @@ public class ChartOutputPlugin extends Application
                     e.printStackTrace();
                 }
                 service.shutdown();
-                System.out.flush();
             }
 
             public void close() {
@@ -295,7 +300,7 @@ public class ChartOutputPlugin extends Application
             series.setName(seriesConfig.getName());
 
             for (Map<String, Object> m : test) {
-                series.getData().add(new ScatterChart.Data(
+                series.getData().add(new XYChart.Data(
                             m.get(seriesConfig.getX()),
                             m.get(seriesConfig.getY())));
             }
