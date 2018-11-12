@@ -9,7 +9,6 @@ import java.util.concurrent.Executors;
 
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.collections.ObservableList;
 import javafx.scene.Scene;
 import javafx.scene.chart.Axis;
 import javafx.scene.chart.BarChart;
@@ -50,7 +49,7 @@ public class ChartOutputPlugin extends Application
     private static String xAxisName;
     private static String yAxisName;
     // List<Map<SeriesName, Map<ColumnName, Value>>>
-    private static List<Map<String, Number>> test;
+    private static List<Map<String, Object>> test;
     private static PluginTask task;
 
     public interface PluginTask
@@ -135,7 +134,7 @@ public class ChartOutputPlugin extends Application
             log.info("{}.", series);
         }
 
-        test = new ArrayList<Map<String, Number>>();
+        test = new ArrayList<Map<String, Object>>();
 
         return new TransactionalPageOutput() {
             private final PageReader reader = new PageReader(schema);
@@ -151,7 +150,7 @@ public class ChartOutputPlugin extends Application
                 }
                 while (reader.nextRecord()) {
                     System.out.println(printer.printRecord(reader, ","));
-                    Map<String, Number> m = new HashMap<>();
+                    Map<String, Object> m = new HashMap<>();
                     for (Column col : targets) {
                         m.put(col.getName(), reader.getLong(col));
                     }
@@ -268,40 +267,35 @@ public class ChartOutputPlugin extends Application
     public void start(Stage stage) {
 
         // 縦横の Axis 定義
-        final NumberAxis xAxis = new NumberAxis();
+        final Axis xAxis = getAxis(task.getXAxisType());
         xAxis.setLabel(xAxisName);
-        final NumberAxis yAxis = new NumberAxis();
+        final Axis yAxis = getAxis(task.getYAxisType());
         yAxis.setLabel(yAxisName);
 
         // Axis を組み合わせてチャートを定義
-        final ScatterChart<Number, Number> ScatterChart = new ScatterChart<Number, Number>(xAxis, yAxis);
-
-        // チャートに登録するデータ(シリーズ)を作成
-        List<XYChart.Series<Number, Number>> series3 = createAtan();
+        final XYChart chart = getXYChart(task.getChartType(), xAxis, yAxis);
 
         // シリーズをチャートに登録
-        ObservableList<ScatterChart.Series<Number, Number>> ScatterChartDatas =ScatterChart.getData();
-        ScatterChartDatas.addAll(series3);
+        chart.getData().addAll(createSerieses());
 
         // シーンにチャートを追加して表示
-        Scene scene = new Scene(ScatterChart, 800, 600);
+        Scene scene = new Scene(chart, 800, 600);
         stage.setScene(scene);
-        stage.setTitle("ScatterChart Sample");
+        stage.setTitle("embulk-output-chart");
         stage.show();
     }
 
     // tan のシリーズを生成
-    // TODO: List<Series<Number, Number>> を返却するように修正
-    private List<XYChart.Series<Number, Number>> createAtan() {
+    private List<XYChart.Series> createSerieses() {
         List<SeriesConfig> seriesConfigs = task.getSeriesesConfig().getSerieses();
-        List<XYChart.Series<Number, Number>> serieses = new ArrayList(seriesConfigs.size());
+        List<XYChart.Series> serieses = new ArrayList(seriesConfigs.size());
 
         for (SeriesConfig seriesConfig : seriesConfigs) {
-            XYChart.Series<Number, Number> series = new XYChart.Series<Number, Number>();
+            XYChart.Series series = new XYChart.Series();
             series.setName(seriesConfig.getName());
 
-            for (Map<String, Number> m : test) {
-                series.getData().add(new ScatterChart.Data<Number, Number>(
+            for (Map<String, Object> m : test) {
+                series.getData().add(new ScatterChart.Data(
                             m.get(seriesConfig.getX()),
                             m.get(seriesConfig.getY())));
             }
