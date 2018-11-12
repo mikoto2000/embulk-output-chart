@@ -1,6 +1,7 @@
 package org.embulk.output.chart;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -77,9 +78,11 @@ public class ChartOutputPlugin extends Application
             @Config("y_axis_name")
             public String getYAxisName();
 
-            // configuration y-axis column name (required String)
             @Config("serieses")
             public SeriesesConfig getSeriesesConfig();
+
+            @Config("series_mapping_rule")
+            public SeriesMappingRulesConfig getSeriesesMappingRulesConfig();
         }
 
     private Logger log = Exec.getLogger(ChartOutputPlugin.class);
@@ -134,6 +137,10 @@ public class ChartOutputPlugin extends Application
             log.info("{}.", series);
         }
 
+        for (SeriesMappingRuleConfig rule : task.getSeriesesMappingRulesConfig().getRules()) {
+            log.info("{}.", rule);
+        }
+
         test = new ArrayList<Map<String, Object>>();
 
         return new TransactionalPageOutput() {
@@ -143,21 +150,19 @@ public class ChartOutputPlugin extends Application
 
             public void add(Page page) {
                 reader.setPage(page);
-                List<Column> targets = new ArrayList<>();
-                for (SeriesConfig series : task.getSeriesesConfig().getSerieses()) {
-                    targets.add(schema.lookupColumn(series.getX()));
-                    targets.add(schema.lookupColumn(series.getY()));
-                }
+                List<Column> columns = schema.getColumns();
                 while (reader.nextRecord()) {
                     Map<String, Object> m = new HashMap<>();
-                    for (Column col : targets) {
+                    for (Column col : columns) {
                         String typeName = col.getType().getName();
                         if (typeName.equals("string")) {
                             m.put(col.getName(), reader.getString(col));
                         } else if (typeName.equals("long")){
                             m.put(col.getName(), reader.getLong(col));
-                        } else {
+                        } else if (typeName.equals("double")) {
                             m.put(col.getName(), reader.getDouble(col));
+                        } else {
+                            log.warn("Unsupported column, type: {}, name: {}.", col.getType(), col.getName());
                         }
                     }
                     test.add(m);
@@ -268,6 +273,49 @@ public class ChartOutputPlugin extends Application
         }
     }
 
+    public static class SeriesMappingRulesConfig {
+        private final List<SeriesMappingRuleConfig> rules;
+
+        @JsonCreator
+        public SeriesMappingRulesConfig(List<SeriesMappingRuleConfig> rules) {
+            this.rules = rules;
+        }
+
+        @JsonValue
+        public List<SeriesMappingRuleConfig> getRules() {
+            return rules;
+        }
+    }
+
+    public static class SeriesMappingRuleConfig {
+        private final String column;
+        private final String value;
+        private final String series;
+
+        @JsonCreator
+        public SeriesMappingRuleConfig(ConfigSource conf) {
+            this.column = conf.get(String.class, "column");
+            this.value = conf.get(String.class, "value");
+            this.series = conf.get(String.class, "series");
+        }
+
+        public String getColumn() {
+            return column;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+        public String getSeries() {
+            return series;
+        }
+
+        public String toString() {
+            return String.format("SeriesMappingRuleConfig[%s, %s, %s]", getColumn(), getValue(), getSeries());
+        }
+    }
+
     @Override
     public void start(Stage stage) {
 
@@ -291,25 +339,29 @@ public class ChartOutputPlugin extends Application
     }
 
     // tan のシリーズを生成
-    private List<XYChart.Series> createSerieses() {
-        List<SeriesConfig> seriesConfigs = task.getSeriesesConfig().getSerieses();
-        List<XYChart.Series> serieses = new ArrayList(seriesConfigs.size());
+    private Collection<XYChart.Series> createSerieses() {
+        Map<String, SeriesConfig> seriesConfigs = new HashMap<>();
+        Map<String, XYChart.Series> serieses = new HashMap<>();
 
-        for (SeriesConfig seriesConfig : seriesConfigs) {
+        for (SeriesConfig seriesConfig : task.getSeriesesConfig().getSerieses()) {
             XYChart.Series series = new XYChart.Series();
             series.setName(seriesConfig.getName());
-
-            for (Map<String, Object> m : test) {
-                series.getData().add(new XYChart.Data(
-                            m.get(seriesConfig.getX()),
-                            m.get(seriesConfig.getY())));
-            }
-
-            serieses.add(series);
+            serieses.put(seriesConfig.getName(), series);
+            seriesConfigs.put(seriesConfig.getName(), seriesConfig);
         }
 
+        for (Map<String, Object> m : test) {
+            for (SeriesMappingRuleConfig rule : task.getSeriesesMappingRulesConfig().getRules()) {
+                if (rule.getValue().equals(m.get(rule.getColumn()))) {
+                    XYChart.Series series = serieses.get(rule.getSeries());
+                    series.getData().add(new XYChart.Data(
+                                m.get(seriesConfigs.get(rule.getSeries()).getX()),
+                                m.get(seriesConfigs.get(rule.getSeries()).getY())));
+                }
+            }
+        }
 
-        return serieses;
+        return serieses.values();
     }
 }
 
