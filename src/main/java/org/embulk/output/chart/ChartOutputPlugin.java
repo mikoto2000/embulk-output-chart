@@ -82,7 +82,8 @@ public class ChartOutputPlugin extends Application
             public SeriesesConfig getSeriesesConfig();
 
             @Config("series_mapping_rule")
-            public SeriesMappingRulesConfig getSeriesesMappingRulesConfig();
+            @ConfigDefault("null")
+            public Optional<SeriesMappingRulesConfig> getSeriesesMappingRulesConfig();
         }
 
     private Logger log = Exec.getLogger(ChartOutputPlugin.class);
@@ -137,8 +138,10 @@ public class ChartOutputPlugin extends Application
             log.info("{}.", series);
         }
 
-        for (SeriesMappingRuleConfig rule : task.getSeriesesMappingRulesConfig().getRules()) {
-            log.info("{}.", rule);
+        if (task.getSeriesesMappingRulesConfig().isPresent()) {
+            for (SeriesMappingRuleConfig rule : task.getSeriesesMappingRulesConfig().get().getRules()) {
+                log.info("{}.", rule);
+            }
         }
 
         test = new ArrayList<Map<String, Object>>();
@@ -351,12 +354,20 @@ public class ChartOutputPlugin extends Application
         }
 
         for (Map<String, Object> m : test) {
-            for (SeriesMappingRuleConfig rule : task.getSeriesesMappingRulesConfig().getRules()) {
-                if (rule.getValue().equals(m.get(rule.getColumn()))) {
-                    XYChart.Series series = serieses.get(rule.getSeries());
+            if (task.getSeriesesMappingRulesConfig().isPresent()) {
+                for (SeriesMappingRuleConfig rule : task.getSeriesesMappingRulesConfig().get().getRules()) {
+                    if (rule.getValue().equals(m.get(rule.getColumn()))) {
+                        XYChart.Series series = serieses.get(rule.getSeries());
+                        series.getData().add(new XYChart.Data(
+                                    m.get(seriesConfigs.get(rule.getSeries()).getX()),
+                                    m.get(seriesConfigs.get(rule.getSeries()).getY())));
+                    }
+                }
+            } else {
+                for (XYChart.Series series : serieses.values()) {
                     series.getData().add(new XYChart.Data(
-                                m.get(seriesConfigs.get(rule.getSeries()).getX()),
-                                m.get(seriesConfigs.get(rule.getSeries()).getY())));
+                                m.get(seriesConfigs.get(series.getName()).getX()),
+                                m.get(seriesConfigs.get(series.getName()).getY())));
                 }
             }
         }
