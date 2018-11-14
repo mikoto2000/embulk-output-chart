@@ -2,6 +2,8 @@
 
 Display chart with Java FX.
 
+![](https://raw.githubusercontent.com/mikoto2000/embulk-output-chart/images/doc/image/scatter.png)
+
 ## Overview
 
 * **Plugin type**: output
@@ -75,27 +77,27 @@ out:
     - {name: D, x: Name, y: Value D}
 ```
 
-![](./doc/image/bar.png)
+![](https://raw.githubusercontent.com/mikoto2000/embulk-output-chart/images/doc/image/bar.png)
 
 
 ### 各シリーズで数が違う場合
 
-例えばこんな CSV ファイルの場合。
+例えばこんな csv ファイルの場合。
 
 ```csv
-Time,Value,Name
-1,2,User 1
-2,1,User 2
-2,4,User 1
-3,2,User 2
-3,6,User 1
-4,1,User 3
-4,4,User 2
-4,8,User 1
-5,2,User 3
-5,8,User 2
-6,3,User 3
-7,5,User 3
+time,value,name
+1,2,user 1
+2,1,user 2
+2,4,user 1
+3,2,user 2
+3,6,user 1
+4,1,user 3
+4,4,user 2
+4,8,user 1
+5,2,user 3
+5,8,user 2
+6,3,user 3
+7,5,user 3
 ```
 
 config.yml
@@ -103,22 +105,22 @@ config.yml
 ```yaml
 out:
   type: chart
-  chart_type: LINE
-  x_axis_name: Time
-  x_axis_type: NUMBER
-  y_axis_name: Value
-  y_axis_type: NUMBER
+  chart_type: line
+  x_axis_name: time
+  x_axis_type: number
+  y_axis_name: value
+  y_axis_type: number
   serieses:
-    - {name: User 1, x: Time, y: Value}
-    - {name: User 2, x: Time, y: Value}
-    - {name: User 3, x: Time, y: Value}
+    - {name: user 1, x: time, y: value}
+    - {name: user 2, x: time, y: value}
+    - {name: user 3, x: time, y: value}
   series_mapping_rule:
-    - {column: Name, value: User 1, series: User 1} # Name 列の値が `User 1` であれば、シリーズ `User 1` のデータに登録する
-    - {column: Name, value: User 2, series: User 2}
-    - {column: Name, value: User 3, series: User 3}
+    - {column: name, value: user 1, series: user 1} # name 列の値が `user 1` であれば、シリーズ `user 1` のデータに登録する
+    - {column: name, value: user 2, series: user 2}
+    - {column: name, value: user 3, series: user 3}
 ```
 
-![](./doc/image/line.png)
+![](https://raw.githubusercontent.com/mikoto2000/embulk-output-chart/images/doc/image/line.png)
 
 
 ## Build
