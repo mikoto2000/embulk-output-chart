@@ -66,6 +66,7 @@ public class ChartOutputPlugin extends Application
 
             // configuration x-axis name (required String)
             // TODO: change name to "Label"
+            // TODO: change to optional
             @Config("x_axis_name")
             public String getXAxisName();
 
@@ -75,6 +76,7 @@ public class ChartOutputPlugin extends Application
 
             // configuration y-axis name (required String)
             // TODO: change name to "Label"
+            // TODO: change to optional
             @Config("y_axis_name")
             public String getYAxisName();
 
