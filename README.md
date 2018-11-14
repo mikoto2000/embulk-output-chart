@@ -39,6 +39,7 @@ Display chart with Java FX.
 
 - Only on `Local Executor Plugin`
 - You need set `1` to `max_threads` and `min_output_tasks`
+- LocalFileInputPlugin で複数ファイルを読み込むなどで、複数タスクが実行される場合の動作保証はできません
 
 
 ```yaml
