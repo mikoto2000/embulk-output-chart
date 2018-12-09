@@ -25,10 +25,15 @@ Display chart with Java FX.
     - NUMBER
     - CATEGORY
 - **x_axis_name**: description (string, required)
+- **x_axis_force_zero_in_range**: include zero in x axis.(boolean, default: false, true: include, false: not include)
 - **y_axis_type**: description (enum, required)
+    - DATE
+        - unix epoch time(long value) to string label(YYYY/MM/dd format)
+        - TODO: create example.
     - NUMBER
     - CATEGORY
-- **x_axis_name**: description (string, required)
+- **y_axis_name**: description (string, required)
+- **y_axis_force_zero_in_range**: include zero in y axis.(boolean, default: false, true: include, false: not include)
 - **serieses**: description (SeriesesConfig, required)
     - **name**: series name (string, required)
     - **x**: column name of x axis value (string, required)

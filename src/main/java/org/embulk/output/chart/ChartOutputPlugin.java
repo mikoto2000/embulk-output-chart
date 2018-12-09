@@ -74,6 +74,9 @@ public class ChartOutputPlugin extends Application
             @Config("x_axis_name")
             public String getXAxisName();
 
+            @Config("x_axis_force_zero_in_range")
+            public boolean getXAxisForceZeroInRange();
+
             // configuration y-axis type (required AxisType)
             @Config("y_axis_type")
             public AxisType getYAxisType();
@@ -83,6 +86,9 @@ public class ChartOutputPlugin extends Application
             // TODO: change to optional
             @Config("y_axis_name")
             public String getYAxisName();
+
+            @Config("y_axis_force_zero_in_range")
+            public boolean getYAxisForceZeroInRange();
 
             @Config("serieses")
             public SeriesesConfig getSeriesesConfig();
@@ -214,11 +220,12 @@ public class ChartOutputPlugin extends Application
         CATEGORY;
     }
 
-    private static Axis getAxis(AxisType axisType) {
+    private static Axis getAxis(AxisType axisType, boolean isForceZeroInRange) {
         switch (axisType) {
             case DATE:
-                NumberAxis axis = new NumberAxis();
-                axis.setTickLabelFormatter(new StringConverter<Number>() {
+                NumberAxis dateAxis = new NumberAxis();
+                dateAxis.setForceZeroInRange(isForceZeroInRange);
+                dateAxis.setTickLabelFormatter(new StringConverter<Number>() {
                     @Override
                     public Number fromString(String string) {
                         return null;
@@ -231,9 +238,11 @@ public class ChartOutputPlugin extends Application
                         return DateFormat.getDateInstance().format(date);
                     }
                 });
-                return axis;
+                return dateAxis;
             case NUMBER:
-                return new NumberAxis();
+                NumberAxis numberAxis = new NumberAxis();
+                numberAxis.setForceZeroInRange(isForceZeroInRange);
+                return numberAxis;
             case CATEGORY:
                 return new CategoryAxis();
             default:
@@ -346,9 +355,9 @@ public class ChartOutputPlugin extends Application
     public void start(Stage stage) {
 
         // 縦横の Axis 定義
-        final Axis xAxis = getAxis(task.getXAxisType());
+        final Axis xAxis = getAxis(task.getXAxisType(), task.getXAxisForceZeroInRange());
         xAxis.setLabel(xAxisName);
-        final Axis yAxis = getAxis(task.getYAxisType());
+        final Axis yAxis = getAxis(task.getYAxisType(), task.getYAxisForceZeroInRange());
         yAxis.setLabel(yAxisName);
 
         // Axis を組み合わせてチャートを定義
