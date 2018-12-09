@@ -1,7 +1,10 @@
 package org.embulk.output.chart;
 
+
+import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +24,7 @@ import javafx.scene.chart.ScatterChart;
 import javafx.scene.chart.StackedBarChart;
 import javafx.scene.chart.XYChart;
 import javafx.stage.Stage;
+import javafx.util.StringConverter;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
@@ -205,12 +209,29 @@ public class ChartOutputPlugin extends Application
     }
 
     public enum AxisType {
+        DATE,
         NUMBER,
         CATEGORY;
     }
 
     private static Axis getAxis(AxisType axisType) {
         switch (axisType) {
+            case DATE:
+                NumberAxis axis = new NumberAxis();
+                axis.setTickLabelFormatter(new StringConverter<Number>() {
+                    @Override
+                    public Number fromString(String string) {
+                        return null;
+                    }
+
+                    @Override
+                    public String toString(Number number) {
+                        long val = number.longValue() * 1000;
+                        Date date = new Date(val);
+                        return DateFormat.getDateInstance().format(date);
+                    }
+                });
+                return axis;
             case NUMBER:
                 return new NumberAxis();
             case CATEGORY:

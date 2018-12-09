@@ -19,6 +19,9 @@ Display chart with Java FX.
     - SCATTER
     - STACKED_BAR
 - **x_axis_type**: description (enum, required)
+    - DATE
+        - unix epoch time(long value) to string label(YYYY/MM/dd format)
+        - TODO: create example.
     - NUMBER
     - CATEGORY
 - **x_axis_name**: description (string, required)
